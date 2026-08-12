@@ -22,6 +22,14 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Restore alert state
+        uses: actions/cache/restore@v5
+        with:
+          path: .weather-state.json
+          key: weather-state-${{ github.run_id }}
+          restore-keys: |
+            weather-state-
+
       - run: pip install -r requirements.txt
 
       - name: Check wind limits
@@ -32,3 +40,10 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SEND_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test || false }}
         run: python monitor.py
+
+      - name: Save alert state
+        if: always() && hashFiles('.weather-state.json') != ''
+        uses: actions/cache/save@v5
+        with:
+          path: .weather-state.json
+          key: weather-state-${{ github.run_id }}

@@ -184,13 +184,13 @@ def build_alert_email(config, assessed, reason, generated_at=None):
         gust = f"{item['wind_gust']:.1f}" if item["wind_gust"] is not None else "N/A"
         forecast_time = local_time(item["time"], timezone_name)
         lines.append(f"{item['hours_ahead']}h | {forecast_time} | {item['level']} | Mean {item['wind_speed']:.1f} m/s | "
-                     f"Gust {gust} m/s | {item['wind_direction']:.0f}° | {item['utilisation']:.0f}% of "
+                     f"Gust {gust} m/s | From {item['wind_direction']:.0f}° | Sector {item['sector']}° | {item['utilisation']:.0f}% of "
                      f"{item['limit']:.1f} m/s | {item['trend']} {item['trend_delta']:+.1f} m/s")
         color = {"Normal": "#64748b", "Advisory": "#b45309", "Warning": "#b91c1c"}[item["level"]]
         rows.append("<tr>" + f"<td>{item['hours_ahead']} h</td><td>{escape(forecast_time)}</td>"
                     f"<td style='color:{color};font-weight:700'>{item['level']}</td>"
                     f"<td>{item['wind_speed']:.1f} m/s</td><td>{gust} m/s</td><td>{item['wind_direction']:.0f}°</td>"
-                    f"<td>{item['limit']:.1f} m/s</td><td><strong>{item['utilisation']:.0f}%</strong></td>"
+                    f"<td>{item['sector']}°</td><td>{item['limit']:.1f} m/s</td><td><strong>{item['utilisation']:.0f}%</strong></td>"
                     f"<td>{item['margin']:+.1f} m/s</td><td>{item['trend_arrow']} {item['trend']} ({item['trend_delta']:+.1f})</td></tr>")
     notice = ("Limits are assessed against forecast 10-minute mean wind at 10 m. Gusts are displayed for awareness "
               "and are not assessed against the configured mean-wind limits.")
@@ -203,11 +203,11 @@ def build_alert_email(config, assessed, reason, generated_at=None):
     html = f"""<div style="font-family:Arial,sans-serif;color:#172033;max-width:1050px">
     <h2 style="margin-bottom:6px">{title}</h2><p><strong>Location:</strong> {escape(config['location_name'])}<br>
     <strong>Alert generated:</strong> {escape(generated)}</p>
-    <img src="cid:wind-rose" alt="Directional wind forecast" style="max-width:680px;width:100%;height:auto">
+    <img src="cid:wind-rose" alt="Directional wind forecast" width="340" style="display:block;max-width:340px;width:100%;height:auto">
     <p style="background:#f1f5f9;padding:10px;border-left:4px solid #1769aa"><strong>Operational notice:</strong> {escape(notice)}</p>
     <div style="overflow-x:auto"><table style="border-collapse:collapse;font-size:13px" border="1" cellpadding="6">
     <thead style="background:#eaf1f8"><tr><th>Horizon</th><th>Forecast time</th><th>Level</th><th>Mean</th><th>Gust</th>
-    <th>From</th><th>Limit</th><th>Use</th><th>Margin</th><th>Trend</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>
+    <th>From</th><th>Sector</th><th>Limit</th><th>Use</th><th>Margin</th><th>Trend</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>
     <p><a href="{escape(forecast_url)}" style="display:inline-block;background:#1769aa;color:white;padding:10px 16px;text-decoration:none;border-radius:4px">View full weather forecast</a></p>
     <p style="font-size:12px;color:#475569"><strong>About this service</strong><br>{escape(disclaimer)}</p>
     <p style="font-size:11px;color:#64748b">Enjoyneering ApS · Forecast source: YR / MET Norway · Generated {escape(generated)}</p></div>"""

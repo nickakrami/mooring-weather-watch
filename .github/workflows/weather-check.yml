@@ -35,7 +35,7 @@ jobs:
       - name: Check wind limits
         env:
           USER_AGENT: "mooring-weather-watch/1.0 nick@enjoyneering.dk"
-          EMAIL_TO: "nick@enjoyneering.dk"
+          EMAIL_TO: "nick@enjoyneering.dk,jesper@d3-consulting.com"
           EMAIL_FROM: "Mooring Weather Watch <weather@alerts.enjoyneering.dk>"
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           SEND_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.send_test || false }}

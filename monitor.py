@@ -22,6 +22,12 @@ SEND_TEST = os.getenv("SEND_TEST", "false").lower() == "true"
 USER_AGENT = os.getenv("USER_AGENT", "mooring-weather-watch/1.0 contact@example.com")
 
 
+def email_recipients():
+    if not EMAIL_TO:
+        return []
+    return [address.strip() for address in EMAIL_TO.split(",") if address.strip()]
+
+
 def load_config():
     with open(CONFIG_FILE, encoding="utf-8") as file:
         return json.load(file)
@@ -229,9 +235,10 @@ def build_all_clear_email(config, generated_at=None):
 def send_email(subject, text_body, html_body, chart=None, idempotency_key=None):
     if not RESEND_API_KEY:
         raise RuntimeError("RESEND_API_KEY is not configured.")
-    if not EMAIL_TO:
+    recipients = email_recipients()
+    if not recipients:
         raise RuntimeError("EMAIL_TO is not configured.")
-    payload = {"from": EMAIL_FROM, "to": [EMAIL_TO], "subject": subject, "text": text_body, "html": html_body}
+    payload = {"from": EMAIL_FROM, "to": recipients, "subject": subject, "text": text_body, "html": html_body}
     if chart:
         payload["attachments"] = [{"content": base64.b64encode(chart).decode("ascii"),
                                    "filename": "wind-forecast.png", "content_id": "wind-rose"}]
@@ -248,7 +255,7 @@ def send_test_email(config):
     text = f"Test successful. Mooring Weather Watch can send email notifications.\nLocation: {config['location_name']}"
     html = f"<h2>Test successful</h2><p>Mooring Weather Watch can send email notifications.</p><p><strong>Location:</strong> {escape(config['location_name'])}</p>"
     send_email(subject, text, html)
-    print(f"Test email sent to {EMAIL_TO}.")
+    print(f"Test email sent to {', '.join(email_recipients())}.")
 
 
 def main():
@@ -266,13 +273,13 @@ def main():
         subject, text, html = build_all_clear_email(config)
         clear_key = datetime.now(timezone.utc).strftime("mooring-weather/all-clear/%Y%m%d%H")
         send_email(subject, text, html, idempotency_key=clear_key)
-        print(f"All-clear email sent to {EMAIL_TO}.")
+        print(f"All-clear email sent to {', '.join(email_recipients())}.")
     elif reason:
         subject, text, html = build_alert_email(config, assessed, reason)
         chart = make_wind_rose(config, assessed)
         signature = hashlib.sha256(f"{highest_level(active)}|{max(item['utilisation'] for item in active):.0f}|{active[0]['time']}".encode()).hexdigest()[:20]
         send_email(subject, text, html, chart, f"mooring-weather/{signature}")
-        print(f"{highest_level(active)} email sent to {EMAIL_TO} ({reason}).")
+        print(f"{highest_level(active)} email sent to {', '.join(email_recipients())} ({reason}).")
     else:
         print("No new notification required.")
     save_state(update_state(state, assessed, reason))
